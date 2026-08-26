@@ -1,0 +1,18 @@
+name = "data"
+api = 1
+form = "native"
+entry = "target/release/json-toml-worm"
+
+# The build side: a claimed .json or .toml file becomes a Luau module in
+# the output tree, so a require of one runs in the place.
+[frontend]
+claims = [".json", ".toml"]
+
+# The editor side: the same lowering feeds the analyzer, so hover and
+# completion see the real structural type of the data.
+[lsp]
+resolve = true
+
+# The hooks answer inside plain Luau files: the requires this worm
+# resolves are written in ordinary code, so claim-only serving widens.
+serves_luau = true

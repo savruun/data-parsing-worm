@@ -1,0 +1,15 @@
+[package]
+name = "json-toml-worm"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A larvae worm: require .json and .toml files as typed Luau modules"
+
+[[bin]]
+name = "json-toml-worm"
+path = "src/main.rs"
+
+[dependencies]
+larvae-worm = { path = "../larvae-luau/crates/larvae-worm", features = ["native"] }
+serde_json = "1"
+toml = "0.9"
