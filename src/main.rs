@@ -26,7 +26,8 @@ impl Handler for DataWorm {
     }
 
     fn lsp_resolve(&mut self, from: &str, spec: &str) -> Result<Option<String>, String> {
-        if !spec.ends_with(".json") && !spec.ends_with(".toml") {
+        // The hook joins against the requiring file, so an alias is not ours.
+        if spec.starts_with('@') {
             return Ok(None);
         }
 
@@ -34,13 +35,26 @@ impl Handler for DataWorm {
             .parent()
             .unwrap_or_else(|| std::path::Path::new(""));
 
-        let joined = base.join(spec);
+        /*
+        The extension is optional, because the build side drops it: larvae
+        names a claimed `test.json` after its stem, so `require("./test")`
+        is what the author writes and what runs in the place. The editor
+        answers both spellings, or the two sides disagree and the hover
+        falls back to any.
+        */
+        let candidates = match spec.ends_with(".json") || spec.ends_with(".toml") {
+            true => vec![spec.to_string()],
 
-        match joined.canonicalize() {
-            Ok(path) => Ok(Some(path.to_string_lossy().into_owned())),
+            false => vec![format!("{spec}.json"), format!("{spec}.toml")],
+        };
 
-            Err(_) => Ok(None),
+        for candidate in candidates {
+            if let Ok(path) = base.join(&candidate).canonicalize() {
+                return Ok(Some(path.to_string_lossy().into_owned()));
+            }
         }
+
+        Ok(None)
     }
 
     fn lsp_load(&mut self, path: &str) -> Result<LspLoad, String> {
