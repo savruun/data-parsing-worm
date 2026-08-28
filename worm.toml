@@ -13,6 +13,10 @@ claims = [".json", ".toml"]
 [lsp]
 resolve = true
 
+# Completions inside a claimed data file empty out: the lowering is Luau,
+# and the Luau global scope is noise in a file that holds no code.
+respond = ["completions"]
+
 # The hooks answer inside plain Luau files: the requires this worm
 # resolves are written in ordinary code, so claim-only serving widens.
 serves_luau = true

@@ -57,6 +57,33 @@ impl Handler for DataWorm {
         Ok(None)
     }
 
+    /*
+    Inside a data file, the analyzer has nothing to offer.
+
+    The lowering is a Luau module, so the analyzer would answer a ctrl-space
+    in a `.toml` with the Luau global scope, which is noise in a file that
+    holds no code. The list empties for the claimed formats and no other:
+    a completion in a plain Luau file passes through untouched, whoever
+    asked for it.
+    */
+    fn lsp_respond(
+        &mut self,
+        kind: &str,
+        context: &str,
+        _response: &str,
+    ) -> Result<Option<serde_json::Value>, String> {
+        if kind != "completions" {
+            return Ok(None);
+        }
+
+        let context: serde_json::Value = serde_json::from_str(context).unwrap_or_default();
+        let claimed = context["path"]
+            .as_str()
+            .is_some_and(|p| p.ends_with(".json") || p.ends_with(".toml"));
+
+        Ok(claimed.then(|| serde_json::json!([])))
+    }
+
     fn lsp_load(&mut self, path: &str) -> Result<LspLoad, String> {
         let text =
             std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
