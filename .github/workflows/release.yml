@@ -43,12 +43,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The sdk is a path dependency, ../larvae from this repo, which is
-      # how a worm and its host move together. The runner holds only this
-      # repo, so the sibling clones here.
-      - name: fetch the sdk the path dependency names
-        run: git clone --depth 1 https://github.com/larvae-luau/larvae ../larvae
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}

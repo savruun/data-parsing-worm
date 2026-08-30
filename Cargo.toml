@@ -10,9 +10,7 @@ name = "data-parsing-worm"
 path = "src/main.rs"
 
 [dependencies]
-larvae-worm = { path = "../larvae/crates/larvae-worm", features = [
-  "native",
-] }
+larvae-worm = { version = "0.7", features = ["native"] }
 
 serde_json = "1"
 toml = "0.9"

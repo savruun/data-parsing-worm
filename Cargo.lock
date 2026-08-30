@@ -42,6 +42,8 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 [[package]]
 name = "larvae-worm"
 version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92cff1f848d4b8d6b7bccdf1b07a548e1e56d40a751556b9fc9cfbebd78e9bf9"
 dependencies = [
  "serde",
  "serde_json",
