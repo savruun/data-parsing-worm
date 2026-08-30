@@ -1,0 +1,99 @@
+# The release of a native worm.
+#
+# larvae reads `worm.toml` beside the executable, so each archive holds both,
+# and the name inside the archive is the `entry` of the manifest.
+#
+# larvae looks for `<name>-worm-<arch>-<os>.zip` before it tries the plain
+# names, because a native worm ships one artifact for each platform. The arch
+# and the os are the ones that Rust names, such as `x86_64` and `linux`, and
+# the name is the key that a project writes under `[worms]`. So each archive
+# below carries the name that larvae asks for, and a project names no asset.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build for ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            asset: data-worm-x86_64-linux
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            asset: data-worm-x86_64-macos
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            asset: data-worm-aarch64-macos
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            asset: data-worm-x86_64-windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # The worm and its manifest sit in one directory inside the archive,
+      # which larvae lifts when it unpacks. larvae sets the executable bit
+      # itself, so the mode that an archive carries decides nothing.
+      #
+      # `7z` is on each runner and `zip` is not: the bash of a windows runner
+      # is Git Bash, and that shell ships no `zip`.
+      - name: package
+        shell: bash
+        run: |
+          name="${{ matrix.asset }}"
+          mkdir -p "staging/$name"
+          cp worm.toml "staging/$name/"
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "target/${{ matrix.target }}/release/data-parsing-worm.exe" "staging/$name/"
+          else
+            cp "target/${{ matrix.target }}/release/data-parsing-worm" "staging/$name/"
+          fi
+
+          cd staging && 7z a "../$name.zip" "$name"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}.zip
+          if-no-files-found: error
+
+  release:
+    name: publish the release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: archives
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: archives/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

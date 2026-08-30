@@ -1,7 +1,7 @@
 name = "data"
 api = 1
 form = "native"
-entry = "target/release/data-parsing-worm"
+entry = "data-parsing-worm"
 
 # The build side: a claimed .json or .toml file becomes a Luau module in
 # the output tree, so a require of one runs in the place.
